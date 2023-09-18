@@ -57,9 +57,13 @@ Be aware of...
 ## Creating the Lambda
 
 * General information: [Lambda with an API Gateway trigger](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
-* [Using a Lambda to stop EC2 instances](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/stop_instances)
+* To the purpose: [Using a Lambda to stop EC2 instances](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/stop_instances)
 
-- Name `ec2halt` language `Python 11`
+- Oregon, create function `ec2halt` from scratch in language `Python 3.11`
+- This Lambda will crash and burn without the necessary Role/Policy needed to work with EC2 instances
+    - Dashboard > Configuration > Permissions > `ec2halt-role-w3p78jgn` > hyperlink to IAM page
+        - Add Permissions > Attach Policies
+        - Select AmazonEC2FullAccess and add it... Will this work? Yes, it worked.
 
 ```
 import json
@@ -69,11 +73,32 @@ ec2 = boto3.resource('ec2', region_name='us-west-2')
 
 def stop_running_instances(ec2):
     instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    # Does not work: len(instances)
     for instance in instances:
         id=instance.id
+        print('trying to halt ' + str(id))
         ec2.instances.filter(InstanceIds=[id]).stop()
-print("All Instances are now stopped.")
     
-if __name__ == "__main__":
+def lambda_handler(event, conext):
     stop_running_instances(ec2)
+    print("Alles Instances sind jetzt halten, hoffen wir.")
+    return { 'statusCode': 200, 'body': 'ec2halt ack' }
+```
+
+<Test> button runs to completion; output is:
+
+
+```
+Test Event Name
+ec2halttest
+
+Response
+null
+
+Function Logs
+START RequestId: 0c1f9ced-e0e2-4b16-8a32-a08afa06cdf3 Version: $LATEST
+trying to halt i-0fff10b2ddf543b89
+trying to halt i-0a45306f82c16d4ac
+trying to halt i-0129351bbe1f1bb11
+Alles Instances sind jetzt halten, hoffen wir.
 ```
