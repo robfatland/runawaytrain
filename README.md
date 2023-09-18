@@ -71,7 +71,7 @@ Be aware of...
 import json
 import boto3
 
-def stop_running_instances(ec2, region_name):
+def stop_running_instances(region_name):
     ec2 = boto3.resource('ec2', region_name=region_name)        # a collection of instances in this region
     instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
     idlist = [instance.id for instance in instances]
@@ -82,8 +82,14 @@ def stop_running_instances(ec2, region_name):
     return len(idlist)
     
 def lambda_handler(event, conext):
-    '''This function is what runs on the Lambda trigger'
-    nEC2 = stop_running_instances(ec2, 'us-west-2')
+    '''This function runs on the Lambda trigger'''
+    nEC2 = []       # list of how many EC2 stopped, by region, as follows:
+    regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',                                                     \
+               'ap-south-1', 'ap-northeast-2', 'ap-northeast-3', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', \
+               'ca-central-1',                                                                                         \
+               'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-north-1',                                    \
+               'sa-east-1']
+    for region in regions: nEC2.append(stop_running_instances(region))
     print("Stopped!")
     ackbody = 'ec2halt ack: ' + str(nEC2)
     return { 'statusCode': 200, 'body': ackbody }
@@ -97,8 +103,9 @@ The instance id is the useful information; so the code creates a list of ids fro
 - Configure a Test run (use defaults and give it a simple name)
 - Modify the timeout interval
     - Configuration > General Configuration > Edit > Set to 5 min 0 sec
-    - My early tests suggest 0.5 seconds to stop each instance
-         - 25 instances x 25 regions x 0.5 = 300 seconds so reconsider the 5 minute timeout
+    - My early tests suggest 1 second is needed to stop each instance
+         - regions x (instances / region) gives roughly the time needed to complete (seconds)
+         - reconsider this 5 minute timeout: That is only enough to stop 300 instances
 - Click the <Test> button and verify that the EC2 instances created above are stopped
 
   
