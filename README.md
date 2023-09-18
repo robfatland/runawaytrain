@@ -2,68 +2,84 @@
 
 
 # runawaytrain
-Purpose: Stop EC2 instances under trigger circumstances.
-Resource: The [costnotify repo](https://github.com/robfatland/costnotify) illustrating **Alarm** > **Lambda** > **SNS Email** (runs daily).
+Purpose: Stop EC2 instances under trigger circumstances. Bonus: Lock out all IAM Users and prevent any new instances from spawning.
+As a resource I refer to the [costnotify repo](https://github.com/robfatland/costnotify). It illustrates 
+**Alarm** > **Lambda** > **SNS Email** (and it runs daily on a cron timer).
 
 ## Premise
 
 - Payer account **P**
     - Has associated sub-accounts **S1**, **S2**, ... , **SN**
-    - Has corresponding Notify lists
-    - Has corresponding Fail criteria
-        - Example "Number of EC2 instances exceeds 1"
-- Every five minutes a script runs to determine Success / Fail
-    - Ideal circumstances: Nothing has happened in the past five minutes
-    - Bad: Some series of events results in evaluation Fail
-        - For Fail enact response
-            - Halt all EC2
-            - Disable all IAM Users: Kicked off
-            - Disable all Roles
-            - Notify persons on the Notify list
+    - Has corresponding Notify lists (people who should know something is up)
+    - Has corresponding Fail criteria (maximum number of VMs anticipated, etcetera)
+        - Example: "Number of EC2 instances will never exceed 3"
+- For **P** and sub-accounts **S#**:
+    - Every (say) five minutes a script runs to determine the system state: **Ok / Fail**
+        - Most of the time: Nothing has happened in the past five minutes, state = **Ok**
+        - Perhaps: Events result in state = **Fail**
+            - Enact response
+                - Halt all EC2 instances across all available regions (now working; see below)
+                - Disable all IAM User access to this account
+                - Disable all IAM Roles (?)
+                - Send a notification email to the Notify list
          
 
 ## Notes
 
-Be aware of...
+There are two aspects to the trigger concept: Spend per unit time and bulk number of EC2 instances.
+One could argue that one or the other is sufficient; but my premise is that having multiple checks
+on account usage is a good idea.
+
+
+To be aware of...
 * [...the Cost Intelligence dashboard (intro)](https://aws.amazon.com/blogs/aws-cloud-financial-management/a-detailed-overview-of-the-cost-intelligence-dashboard/)
 * [...the Cloud Intelligence dashboard (lab)](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)
 
 
-## Procedure
-
+## Procedure: Billing alarms
 
 ### Establish Cost and Usage Report (CUR) logging into S3
+
+This is on the spend side of the trigger concept. It is independent of the EC2 'how many?' process (see below).
 
 * Set these up per the latest [AWS CUR bucket recipe page](https://docs.aws.amazon.com/cur/latest/userguide/cur-create.html)
 * I named the S3 bucket for the data `organization-aws-cur`
     * This bucket is organized in a heirarchical folder structure; distal leaves are gzipped CSV CUR files
     * In this example we get to the file dated 06-SEP-2023, 03:27 Zulu
         * `organization-aws-cur/report/organization_aws_cur/20230901-20231001/20230906T032712Z/organization_aws_cur-00001.csv.gz
-     
 
-### Start some EC2 instances
-
-* Launch instances
-    * qty=3 x t2.micro, Amazon Linux, Region = Oregon, generated `train.pem`, `chmod 400 train.pem`, allow ssh traffic from 0.0.0.0\0
-    * Select the `default` Security Group to avoid SG clutter 
 
 ### Set up billing alarms
 
 * [First key page](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html#turning_on_billing_metrics)
 * [Second key page](https://aws.amazon.com/blogs/mt/setting-up-an-amazon-cloudwatch-billing-alarm-to-proactively-monitor-estimated-charges)
+     
+## Procedure: EC2 instance profusion 
+
+### Start some EC2 instances
+
+* Launch instances
+    * qty=10 x t2.micro, Amazon Linux, Region = Oregon, generated `train.pem`, allow ssh traffic from 0.0.0.0\0
+    * Select the `default` Security Group to avoid SG clutter 
+
 
   
-## Creating the Lambda
+## Creating the Lambda to test halting EC2 instances
+
+
+To start out I will just use the Lambda <Test> button.
+
 
 * General information: [Lambda with an API Gateway trigger](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
 * To the purpose: [Using a Lambda to stop EC2 instances](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/stop_instances)
 
+
 - Oregon, create function `ec2halt` from scratch in language `Python 3.11`
-- This Lambda will crash and burn without the necessary Role/Policy needed to work with EC2 instances
+    - Notice that a unique Role is created and assigned to this Lambda function: **`ec2halt-role-w3p78jgn`**
+- This Lambda will crash and burn without an attached Policy that permits EC2 manipulation
     - Dashboard > Configuration > Permissions > `ec2halt-role-w3p78jgn` > hyperlink to IAM page
         - Add Permissions > Attach Policies
         - Select AmazonEC2FullAccess and add it... Will this work? Yes, it worked.
-
 - Modify the code in `lambda_function.py` to something like this:
 
 
@@ -112,7 +128,8 @@ The instance id is the useful information; so the code creates a list of ids fro
 
 ### Testing across regions
 
-Created 10 instances in the US, 5 in Europe, 4 in Asia Pacific, 2 in South America.
-That's 21 total; and the Lambda function stopped all of them in 31 seconds. 
+The test account has access to 17 regions in the US, Canada, South America, Europe and the Asian Pacific. As a low bar I
+created 10 instances in the US, 5 in Europe, 4 in Asia Pacific, and 2 in South America.
+This Lambda function stopped all 21 of them in 31 seconds.
   
 
