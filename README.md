@@ -1,3 +1,6 @@
+![runaway train plan diagram](./runawaytrain.png "Runaway Train Plan Diagram")
+
+
 # runawaytrain
 Purpose: Stop EC2 instances under trigger circumstances.
 Resource: The [costnotify repo](https://github.com/robfatland/costnotify) illustrating **Alarm** > **Lambda** > **SNS Email** (runs daily).
