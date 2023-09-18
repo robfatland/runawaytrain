@@ -1,4 +1,4 @@
-![runaway train plan diagram](./runawaytrain.png)
+
 
 
 
