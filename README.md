@@ -2,9 +2,11 @@
 
 
 
-<br><br>
-<img src="[https://github.com/robfatland/runawaytrain/blob/main/runawaytrain.png]" width="100">
-<br><br>
+
+<img src="https://github.com/robfatland/runawaytrain/blob/main/runawaytrain.png" width="100">
+
+<img src="https://github.com/favicon.ico" width="48">
+
 
 
 
