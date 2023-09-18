@@ -84,6 +84,7 @@ def stop_running_instances(region_name):
 def lambda_handler(event, conext):
     '''This function runs on the Lambda trigger'''
     nEC2 = []       # list of how many EC2 stopped, by region, as follows:
+    # WARNING This region list is specific to an AWS account. Caveat emptor: Modify as appropriate.
     regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',                                                     \
                'ap-south-1', 'ap-northeast-2', 'ap-northeast-3', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', \
                'ca-central-1',                                                                                         \
@@ -91,7 +92,7 @@ def lambda_handler(event, conext):
                'sa-east-1']
     for region in regions: nEC2.append(stop_running_instances(region))
     print("Stopped!")
-    ackbody = 'ec2halt ack: ' + str(nEC2)
+    ackbody = 'ec2halt ack: ' + str(sum(nEC2))
     return { 'statusCode': 200, 'body': ackbody }
 ```
 
@@ -108,5 +109,10 @@ The instance id is the useful information; so the code creates a list of ids fro
          - reconsider this 5 minute timeout: That is only enough to stop 300 instances
 - Click the <Test> button and verify that the EC2 instances created above are stopped
 
+
+### Testing across regions
+
+Created 10 instances in the US, 5 in Europe, 4 in Asia Pacific, 2 in South America.
+That's 21 total; and the Lambda function stopped all of them in 31 seconds. 
   
 
