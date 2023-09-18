@@ -45,8 +45,7 @@ Be aware of...
 
 * Launch instances
     * qty=3 x t2.micro, Amazon Linux, Region = Oregon, generated `train.pem`, `chmod 400 train.pem`, allow ssh traffic from 0.0.0.0\0
-    * No attention paid to Security Group so presumably this used a default
-*  
+    * Select the `default` Security Group to avoid SG clutter 
 
 ### Set up billing alarms
 
@@ -65,40 +64,42 @@ Be aware of...
         - Add Permissions > Attach Policies
         - Select AmazonEC2FullAccess and add it... Will this work? Yes, it worked.
 
+- Modify the code in `lambda_function.py` to something like this:
+
+
 ```
 import json
 import boto3
 
-ec2 = boto3.resource('ec2', region_name='us-west-2')
-
-def stop_running_instances(ec2):
+def stop_running_instances(ec2, region_name):
+    ec2 = boto3.resource('ec2', region_name=region_name)        # a collection of instances in this region
     instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
-    # Does not work: len(instances)
-    for instance in instances:
-        id=instance.id
-        print('trying to halt ' + str(id))
+    idlist = [instance.id for instance in instances]
+    print('in region ' + region_name + ' we found ' + str(len(idlist)) + ' EC2 instances')
+    for id in idlist:
+        print('halting: ' + id)
         ec2.instances.filter(InstanceIds=[id]).stop()
+    return len(idlist)
     
 def lambda_handler(event, conext):
-    stop_running_instances(ec2)
-    print("Alles Instances sind jetzt halten, hoffen wir.")
-    return { 'statusCode': 200, 'body': 'ec2halt ack' }
+    '''This function is what runs on the Lambda trigger'
+    nEC2 = stop_running_instances(ec2, 'us-west-2')
+    print("Stopped!")
+    ackbody = 'ec2halt ack: ' + str(nEC2)
+    return { 'statusCode': 200, 'body': ackbody }
 ```
 
-<Test> button runs to completion; output is:
+> NOTE: The objects returned by filter() are of type `boto3.resources.collection.ec2.instancesCollection` (with no len() available).
+The instance id is the useful information; so the code creates a list of ids from the filtered ec2 collection.
 
 
-```
-Test Event Name
-ec2halttest
+- Click the <Deploy> button to register the new code with the Lambda function
+- Configure a Test run (use defaults and give it a simple name)
+- Modify the timeout interval
+    - Configuration > General Configuration > Edit > Set to 5 min 0 sec
+    - My early tests suggest 0.5 seconds to stop each instance
+         - 25 instances x 25 regions x 0.5 = 300 seconds so reconsider the 5 minute timeout
+- Click the <Test> button and verify that the EC2 instances created above are stopped
 
-Response
-null
+  
 
-Function Logs
-START RequestId: 0c1f9ced-e0e2-4b16-8a32-a08afa06cdf3 Version: $LATEST
-trying to halt i-0fff10b2ddf543b89
-trying to halt i-0a45306f82c16d4ac
-trying to halt i-0129351bbe1f1bb11
-Alles Instances sind jetzt halten, hoffen wir.
-```
