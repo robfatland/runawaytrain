@@ -1,13 +1,4 @@
-
-
-
-
-
-<img src="https://github.com/robfatland/runawaytrain/blob/main/runawaytrain.png" width="100">
-
-<img src="https://github.com/favicon.ico" width="48">
-
-
+<img src="https://github.com/robfatland/runawaytrain/blob/main/runawaytrain.png" width="500">
 
 
 # runawaytrain
