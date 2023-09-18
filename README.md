@@ -21,7 +21,7 @@ Resource: The [costnotify repo](https://github.com/robfatland/costnotify) illust
 
 ## Notes
 
-Be ware of...
+Be aware of...
 * [...the Cost Intelligence dashboard (intro)](https://aws.amazon.com/blogs/aws-cloud-financial-management/a-detailed-overview-of-the-cost-intelligence-dashboard/)
 * [...the Cloud Intelligence dashboard (lab)](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)
 
