@@ -1,4 +1,4 @@
-![runaway train plan diagram](./runawaytrain.png "Runaway Train Plan Diagram")
+![runaway train plan diagram](./runawaytrain.png "Runaway Train Plan Diagram" | width=400)
 
 
 # runawaytrain
