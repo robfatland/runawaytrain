@@ -225,10 +225,21 @@ def lambda_handler(event, conext):
 - Click the <Test> button and verify that the EC2 instances created above are stopped
 
 
-### Testing across regions
+### Testing across regions and debugging
 
-The test account has access to 17 regions in the US, Canada, South America, Europe and the Asian Pacific. As a low bar I
-created 10 instances in the US, 5 in Europe, 4 in Asia Pacific, and 2 in South America.
-This Lambda function stopped all 21 of them in 31 seconds.
+
+The Lambda Python code generates red ink when something is amiss. Upon fixing it one must 
+remember to click the **Deploy** button to actually refresh the code. 
+
+
+The test account has access to 17 regions in the US, Canada, South America, Europe and the Asian Pacific. 
+I created two or more EC2 instances in eight of these regions to test the Lambda halt function.
+I verified that both the `envaction` and `action` paths disable the Lambda when given value `pass`.
+
+
+Stopping N instances takes on the order of N seconds. 
+
+
+> Diagnostics can be found in the Monitor tab, Logs sub-tab. 
   
 
