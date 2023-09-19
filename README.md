@@ -80,12 +80,18 @@ To start out I will just use the Lambda <Test> button.
     - Dashboard > Configuration > Permissions > `ec2halt-role-w3p78jgn` > hyperlink to IAM page
         - Add Permissions > Attach Policies
         - Select AmazonEC2FullAccess and add it... Will this work? Yes, it worked.
+- Configuration > Environment Variables > Edit
+    - Add keypairs: `snstopic runawaytrain` and `ec2limit 4`
+        - The snstopic will be used to send an email to the notification list for this account
+        - The ec2limit is the maximum number of instances: Higher than this triggers the halt
 - Modify the code in `lambda_function.py` to something like this:
 
 
 ```
-import json
-import boto3
+import json, boto3, os
+
+snstopic = os.environ['snstopic']
+ec2limit = int(os.environ['ec2limit'])
 
 def stop_running_instances(region_name):
     ec2 = boto3.resource('ec2', region_name=region_name)        # a collection of instances in this region
@@ -99,6 +105,7 @@ def stop_running_instances(region_name):
     
 def lambda_handler(event, conext):
     '''This function runs on the Lambda trigger'''
+    print("counting EC2 instances; must excede " + str(ec2limit) + " to trigger halt"
     nEC2 = []       # list of how many EC2 stopped, by region, as follows:
     # WARNING This region list is specific to an AWS account. Caveat emptor: Modify as appropriate.
     regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',                                                     \
@@ -106,9 +113,22 @@ def lambda_handler(event, conext):
                'ca-central-1',                                                                                         \
                'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-north-1',                                    \
                'sa-east-1']
-    for region in regions: nEC2.append(stop_running_instances(region))
-    print("Stopped!")
-    ackbody = 'ec2halt ack: ' + str(sum(nEC2))
+    ec2counter = 0
+
+    # count up the instances found in all possible regions
+    for region in regions:
+        ec2 = boto3.resource('ec2', region_name=region)     # a collection
+        instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+        ec2counter += len([instance for instance in instances])
+        if ec2counter > ec2limit: break         # once the ec2limit is exceded: Stop counting
+
+    # if halt condition is True: stop all instances in all regions
+    if ec2counter > ec2limit:
+        for region in regions: nEC2.append(stop_running_instances(region))
+        ackbody = 'ec2halt ack: ' + str(sum(nEC2))
+    else:
+        ackbody = "ec2halt instance count is <= limit"
+
     return { 'statusCode': 200, 'body': ackbody }
 ```
 
