@@ -67,7 +67,11 @@ This is on the spend side of the trigger concept. It is independent of the EC2 '
 ## Creating the Lambda to test halting EC2 instances
 
 
-To start out I will just use the Lambda <Test> button.
+The Lambda function will start counting the number of EC2 instances across all possible regions. 
+If this count exceeds the environment variable `ec2limit` the Lambda will proceed to stop all
+instances. This functionality can be overridden in two ways: By using the `event` JSON object
+passed to the Lambda event handler, key `action`, value `pass`; and by using the environment 
+variable `envaction` with value `pass`. In both cases the Lambda just halts itself.
 
 
 * General information: [Lambda with an API Gateway trigger](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
@@ -81,9 +85,10 @@ To start out I will just use the Lambda <Test> button.
         - Add Permissions > Attach Policies
         - Select AmazonEC2FullAccess and add it... Will this work? Yes, it worked.
 - Configuration > Environment Variables > Edit
-    - Add keypairs: `snstopic runawaytrain` and `ec2limit 4`
+    - Add keypairs: `snstopic runawaytrain`, `ec2limit 4`, and `envaction proceed`
         - The snstopic will be used to send an email to the notification list for this account
         - The ec2limit is the maximum number of instances: Higher than this triggers the halt
+        - The envaction is either `proceed` or `pass`, where the latter prevents the Lambda from running
 - Modify the code in `lambda_function.py` to something like this:
 
 
@@ -140,6 +145,19 @@ def lambda_handler(event, conext):
 
 - Click the <Deploy> button to register the new code with the Lambda function
 - Configure a Test run (use defaults and give it a simple name)
+    - The test button uses a JSON structure passed to the Lambda as variable 'event' 
+        - This will be 'proceed' by default; but 'pass' will cause the Lambda to not run    
+        - Provide (via Edit) a keypair "action": "pass" (the do-not-run state)
+        - Modify "pass" to "proceed" to run normally
+        - This information is processed at the top of the event handler
+
+```
+{
+  "action": "pass",
+  "key2": "value2",
+  "key3": "value3"
+}
+```
 - Modify the timeout interval
     - Configuration > General Configuration > Edit > Set to 5 min 0 sec
     - My early tests suggest 1 second is needed to stop each instance
