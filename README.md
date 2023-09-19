@@ -97,6 +97,7 @@ import json, boto3, os
 
 snstopic = os.environ['snstopic']
 ec2limit = int(os.environ['ec2limit'])
+envaction = os.environ['envaction']
 
 def stop_running_instances(region_name):
     ec2 = boto3.resource('ec2', region_name=region_name)        # a collection of instances in this region
@@ -110,6 +111,23 @@ def stop_running_instances(region_name):
     
 def lambda_handler(event, conext):
     '''This function runs on the Lambda trigger'''
+    
+    # Process a possible JSON event override: 'action' == 'pass'
+    if 'action' in event.keys():
+        print(event)
+        if event['action'] == 'pass':
+            print('ec2halt never minded by action == pass')
+            return { 'statusCode': 200, 'body': 'action == pass voids lambda ec2halt execution' }
+        elif event['action'] == 'proceed': print("event action signals proceed normally")
+        else: print("unrecognized event action value")
+        
+    # Process a possible environment variable override: 'envaction' == 'pass'
+    if envaction == 'pass':
+        print('ec2halt never minded by envaction == pass override')
+        return { 'statusCode': 200, 'body': 'envaction == pass voids lambda ec2halt execution' }
+        
+    # proceed normally    
+    
     print("counting EC2 instances; must excede " + str(ec2limit) + " to trigger halt")
     nEC2 = []       # list of how many EC2 stopped, by region, as follows:
     # WARNING This region list is specific to an AWS account. Caveat emptor: Modify as appropriate.
