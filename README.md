@@ -9,7 +9,7 @@ As a resource I refer to the [costnotify repo](https://github.com/robfatland/cos
 ## Premise
 
 - Payer account **P**
-    - Has associated sub-accounts **S1**, **S2**, ... , **SN**
+    - Has associated sub-accounts **$S_1$**, **S2**, ... , **SN**
     - Has corresponding Notify lists (people who should know something is up)
     - Has corresponding Fail criteria (maximum number of VMs anticipated, etcetera)
         - Example: "Number of EC2 instances will never exceed 3"
