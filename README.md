@@ -2,11 +2,25 @@
 
 
 # runawaytrain
-Purpose: Stop EC2 instances under trigger circumstances. Bonus: Lock out all IAM Users and prevent any new instances from spawning.
-As a resource I refer to the [costnotify repo](https://github.com/robfatland/costnotify). It illustrates 
-**Alarm** > **Lambda** > **SNS Email** (and it runs daily on a cron timer).
+
+
+Purpose: An AWS Lambda that runs regularly, counts the number of EC2 instances across all regions,
+and if this total exceeds a threshold: Stops all EC2 instances and locks all IAM Users out of the
+account.
+
+
+Once the machinery is in place as described below: Ideally we would like to deploy new copies
+into sub-accounts in an automated 'infrastructure as code' manner.
+
+
+Resources:
+- [costnotify repo](https://github.com/robfatland/costnotify): **Alarm (timer)** > **Lambda** > **SNS Email**
+- [digital twin repo](https://github.com/robfatland/digitaltwin): Use of the `event` object passed to the event handler 
+
+
 
 ## Premise
+
 
 - Payer account **P**
     - Has associated sub-accounts **S1**, **S2**, ... , **SN**
@@ -26,21 +40,41 @@ As a resource I refer to the [costnotify repo](https://github.com/robfatland/cos
 
 ## Notes
 
-There are two aspects to the trigger concept: Spend per unit time and bulk number of EC2 instances.
+There are two aspects to the trigger concept: Spend per unit time and a simple total number of EC2 instances.
 One could argue that one or the other is sufficient; but my premise is that having multiple checks
-on account usage is a good idea.
+on account use is a good idea.
 
 
-To be aware of...
+### Resources
+
+
+Dashboards
+
+
 * [...the Cost Intelligence dashboard (intro)](https://aws.amazon.com/blogs/aws-cloud-financial-management/a-detailed-overview-of-the-cost-intelligence-dashboard/)
 * [...the Cloud Intelligence dashboard (lab)](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)
+
+
+Billing alarms
+
+
+* [First key page](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html#turning_on_billing_metrics)
+* [Second key page](https://aws.amazon.com/blogs/mt/setting-up-an-amazon-cloudwatch-billing-alarm-to-proactively-monitor-estimated-charges)
+
+
+Lambda functions
+
+* General information: [Lambda with an API Gateway trigger](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
+* To the purpose: [Using a Lambda to stop EC2 instances](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/stop_instances)
 
 
 ## Procedure: Billing alarms
 
 ### Establish Cost and Usage Report (CUR) logging into S3
 
+
 This is on the spend side of the trigger concept. It is independent of the EC2 'how many?' process (see below).
+
 
 * Set these up per the latest [AWS CUR bucket recipe page](https://docs.aws.amazon.com/cur/latest/userguide/cur-create.html)
 * I named the S3 bucket for the data `organization-aws-cur`
@@ -51,31 +85,37 @@ This is on the spend side of the trigger concept. It is independent of the EC2 '
 
 ### Set up billing alarms
 
-* [First key page](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html#turning_on_billing_metrics)
-* [Second key page](https://aws.amazon.com/blogs/mt/setting-up-an-amazon-cloudwatch-billing-alarm-to-proactively-monitor-estimated-charges)
      
 ## Procedure: EC2 instance profusion 
 
+
 ### Start some EC2 instances
 
-* Launch instances
-    * qty=10 x t2.micro, Amazon Linux, Region = Oregon, generated `train.pem`, allow ssh traffic from 0.0.0.0\0
-    * Select the `default` Security Group to avoid SG clutter 
+
+For testing purposes a keypair `.pem` file is not necessary. 
+
+
+* Launch instances in at least 3 regions
+    * qty=3 (per region) x t2.micro, Amazon Linux, no keypair, use `default` Security Group
+
+
+The threshold (max number of EC2 instances) will be 4. In this way no single region triggers the halt.
 
 
   
 ## Creating the Lambda to test halting EC2 instances
 
 
-The Lambda function will start counting the number of EC2 instances across all possible regions. 
-If this count exceeds the environment variable `ec2limit` the Lambda will proceed to stop all
-instances. This functionality can be overridden in two ways: By using the `event` JSON object
-passed to the Lambda event handler, key `action`, value `pass`; and by using the environment 
-variable `envaction` with value `pass`. In both cases the Lambda just halts itself.
+The Lambda function counts EC2 instances across all possible regions. 
+If this count exceeds the environment variable `ec2limit` the Lambda stops all
+instances. Since Lambda is intended to run on a timer, its action can be overridden 
+in two ways: Using the `event` JSON object that is passed to the Lambda event handler
+when it runs; and by means of an environment variable associated with the Lambda
+function.
 
 
-* General information: [Lambda with an API Gateway trigger](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
-* To the purpose: [Using a Lambda to stop EC2 instances](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/stop_instances)
+- `event` JSON object: key `action`, value `pass` (halt) or `proceed`
+- environment variable `envaction`, value `pass` (halt) or `proceed`
 
 
 - Oregon, create function `ec2halt` from scratch in language `Python 3.11`
@@ -129,7 +169,7 @@ def lambda_handler(event, conext):
     # proceed normally    
     
     print("counting EC2 instances; must excede " + str(ec2limit) + " to trigger halt")
-    nEC2 = []       # list of how many EC2 stopped, by region, as follows:
+    nEC2 = []       # a list of how many EC2 instances were stopped, by region
     # WARNING This region list is specific to an AWS account. Caveat emptor: Modify as appropriate.
     regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',                                                     \
                'ap-south-1', 'ap-northeast-2', 'ap-northeast-3', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', \
@@ -138,7 +178,7 @@ def lambda_handler(event, conext):
                'sa-east-1']
     ec2counter = 0
 
-    # count up the instances found in all possible regions
+    # count up instances across all regions
     for region in regions:
         ec2 = boto3.resource('ec2', region_name=region)     # a collection
         instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
@@ -151,14 +191,15 @@ def lambda_handler(event, conext):
     if ec2counter > ec2limit:
         for region in regions: nEC2.append(stop_running_instances(region))
         ackbody = 'ec2halt ack: ' + str(sum(nEC2))
-    else:
-        ackbody = "ec2halt instance count is <= limit"
+    else: ackbody = "ec2halt found instance count <= limit"
 
     return { 'statusCode': 200, 'body': ackbody }
 ```
 
+
 > NOTE: Objects returned by filter() are type `boto3.resources.collection.ec2.instancesCollection`.
-> Conversion to list form makes it easy to count how many. `.id` is a unique string identifier.
+> Conversion to list form makes these easy to count via `len()`. `.id` is the instance identifier,
+> a unique string.
 
 
 - Click the <Deploy> button to register the new code with the Lambda function
