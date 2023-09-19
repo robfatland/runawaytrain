@@ -105,7 +105,7 @@ def stop_running_instances(region_name):
     
 def lambda_handler(event, conext):
     '''This function runs on the Lambda trigger'''
-    print("counting EC2 instances; must excede " + str(ec2limit) + " to trigger halt"
+    print("counting EC2 instances; must excede " + str(ec2limit) + " to trigger halt")
     nEC2 = []       # list of how many EC2 stopped, by region, as follows:
     # WARNING This region list is specific to an AWS account. Caveat emptor: Modify as appropriate.
     regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',                                                     \
@@ -120,7 +120,9 @@ def lambda_handler(event, conext):
         ec2 = boto3.resource('ec2', region_name=region)     # a collection
         instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
         ec2counter += len([instance for instance in instances])
-        if ec2counter > ec2limit: break         # once the ec2limit is exceded: Stop counting
+        if ec2counter > ec2limit:
+            print("cumulative sum " + str(ec2counter) + " (limit " + str(ec2limit) + ") triggers halt")
+            break         # once the ec2limit is exceded: Stop counting
 
     # if halt condition is True: stop all instances in all regions
     if ec2counter > ec2limit:
@@ -132,8 +134,8 @@ def lambda_handler(event, conext):
     return { 'statusCode': 200, 'body': ackbody }
 ```
 
-> NOTE: The objects returned by filter() are of type `boto3.resources.collection.ec2.instancesCollection` (with no len() available).
-The instance id is the useful information; so the code creates a list of ids from the filtered ec2 collection.
+> NOTE: Objects returned by filter() are type `boto3.resources.collection.ec2.instancesCollection`.
+> Conversion to list form makes it easy to count how many. `.id` is a unique string identifier.
 
 
 - Click the <Deploy> button to register the new code with the Lambda function
