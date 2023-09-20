@@ -4,13 +4,35 @@
 # runawaytrain
 
 
-Purpose: An AWS Lambda that runs regularly, counts the number of EC2 instances across all regions,
-and if this total exceeds a threshold: Stops all EC2 instances and locks all IAM Users out of the
-account.
+Purpose: Deploy AWS infrastructure -- including a Lambda function -- that regularly checks
+AWS account integrity and responds to a compromised (bad guy) state. There are two trigger 
+conditions involved: Counting the number of running EC2 instances across all regions (trigger:
+if the count exceeds a threshold); and looking at recent spend on AWS over the past two hours
+(trigger: spend exceeds a threshold). Once we hit a trigger: Stop all EC2 instances and 
+locks out all IAM Users. Only the root user can come back in and start things back up again.
 
 
-Once the machinery is in place as described below: Ideally we would like to deploy new copies
+## Top view notes
+
+
+- Once the machinery is in place as described below: Ideally we would like to deploy new copies
 into sub-accounts in an automated 'infrastructure as code' manner.
+
+
+- There are some details to be aware of
+    - Notification of a trigger is sent via email using **SNS**
+        - The SNS *topic* is defined and recipients *subscribe* to that topic
+        - The triggered Lambda then *publishes* to that topic
+    - **Policies** are permission slips on AWS: They must be assigned (for example to the Lambda function) in order to take certain actions
+    - **Environment variables** can be used to store sensitive information such as an AWS account ID
+    - A Lambda function is passed a JSON object called **`event`** that can control the Lambda behavior
+    - Debugging
+        - print statements work fine
+        - Helpful: Error messages when the Lambda fails
+        - There are log files that contain additional diagnostic narrative
+    - Regions
+        - Be aware of regional locations when building infrastructure
+            - For example see the `snsregion` environment variable described below 
 
 
 Resources:
@@ -139,21 +161,39 @@ function.
 - This Lambda will crash and burn without an attached Policy that permits EC2 manipulation
     - Dashboard > Configuration > Permissions > `ec2halt-role-w3p78jgn` > hyperlink to IAM page
         - Add Permissions > Attach Policies
-        - Select AmazonEC2FullAccess and add it... Will this work? Yes, it worked.
+        - Select AmazonEC2FullAccess and add it
+        - Select AmazonSNSFullAccess and add it
+    - For the Lambda role there should be 3 attached policies: Lambda basic execution, EC2 full access and SNS full access
 - Configuration > Environment Variables > Edit
-    - Add keypairs: `snstopic runawaytrain`, `ec2limit 4`, and `envaction proceed`
+    - Add keypairs: See table below for keys and values
         - The snstopic will be used to send an email to the notification list for this account
         - The ec2limit is the maximum number of instances: Higher than this triggers the halt
-        - The envaction is either `proceed` or `pass`, where the latter prevents the Lambda from running
+        - `envaction` is `proceed` or `pass`, the latter preventing Lambda from running
+        - `accountnumber` is the 12-digit account identifier, used for the SNS topic ARN
 - Modify the code in `lambda_function.py` to something like this:
 
+
+Here are the environment variables used by the Lambda function:
+
+
+```
+snstopic        runawaytrain
+ec2limit        4
+envaction       proceed
+accountnumber   123456789012
+snsregion       us-west-2
+```
+
+Here is the Lambda Python code:
 
 ```
 import json, boto3, os
 
-snstopic = os.environ['snstopic']
-ec2limit = int(os.environ['ec2limit'])
-envaction = os.environ['envaction']
+snstopic      = os.environ['snstopic']
+ec2limit      = int(os.environ['ec2limit'])
+envaction     = os.environ['envaction']
+accountnumber = os.environ['accountnumber']
+snsregion     = os.environ['snsregion']
 
 def stop_running_instances(region_name):
     ec2 = boto3.resource('ec2', region_name=region_name)        # a collection of instances in this region
@@ -164,6 +204,26 @@ def stop_running_instances(region_name):
         print('halting: ' + id)
         ec2.instances.filter(InstanceIds=[id]).stop()
     return len(idlist)
+
+def FreezeIAM():
+    client = boto3.client('iam')
+    iam = boto3.resource('iam')
+    access_key = iam.AccessKey('user_name','id')
+    print("Client:")
+    print(client)
+    print("IAM:")
+    print(iam)
+    print("Access Key:")
+    print(access_key)
+    return
+    
+def SendSNSMsg(msg):
+    email_subject = 'Runaway Train notification email'
+    email_body    = 'You subscribed.\n' + msg
+    sns           = boto3.client('sns')
+    arnstring     = 'arn:aws:sns:' + snsregion + ':' + accountnumber + ':' + 'runawaytrain'
+    response      = sns.publish(TopicArn=arnstring, Message=email_body, Subject=email_subject)
+    return
     
 def lambda_handler(event, conext):
     '''This function runs on the Lambda trigger'''
@@ -207,8 +267,12 @@ def lambda_handler(event, conext):
     if ec2counter > ec2limit:
         for region in regions: nEC2.append(stop_running_instances(region))
         ackbody = 'ec2halt ack: ' + str(sum(nEC2))
+
     else: ackbody = "ec2halt found instance count <= limit"
 
+    FreezeIAM()
+    SendSNSMsg("Here is the test message")
+            
     return { 'statusCode': 200, 'body': ackbody }
 ```
 
