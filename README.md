@@ -102,8 +102,24 @@ For testing purposes a keypair `.pem` file is not necessary.
 The threshold (max number of EC2 instances) will be 4. In this way no single region triggers the halt.
 
 
-  
-## Creating the Lambda to test halting EC2 instances
+## Procedure: Creating an SNS email mechanism
+
+- Find the SNS service and create a new topic 'runawaytrain'
+- Type = Standard, Display Name = Runaway Train; and Save it
+- Go to Subscriptions > Create Subscription
+    - topic ARN: Use drop-down to select the runawaytrain ARN
+    - Protocol: Email
+    - Recipient: `my_email@uw.edu`
+    - Create Subscription
+    - Now in my email Inbox: Confirm the subscription
+    - Repeat for all desired emails from the notification list for this account
+
+
+To wire the Lambda function up to the SNS subscription: See the `costnotify` code.
+Requires introducing another environment variable, the 12-digit account number.
+
+
+## Procedure: Creating the Lambda to test halting EC2 instances
 
 
 The Lambda function counts EC2 instances across all possible regions. 
