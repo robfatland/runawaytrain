@@ -34,8 +34,47 @@ into sub-accounts in an automated 'infrastructure as code' manner.
         - Be aware of regional locations when building infrastructure
             - For example see the `snsregion` environment variable described below 
 
+- on the boto3 Python AWS interface
+    - We use a Lambda function running Python code
+    - This code imports the `boto3` library (SDK) to execute tasks on the AWS cloud
+    - One of the key lines of this code is `client = boto3.client('iam')`
+        - This creates a `client` object used to deactivate Users and Access Keys
+        - We could also write this code in terms of a `resource` rather than a `client`
+            - What is the distinction between a boto3 `client` versus `resource`?
+                - From [StackOverflow](https://stackoverflow.com/questions/42809096/difference-in-boto3-between-resource-client-and-session): **Client** and **Resource** are distinct abstractions.
+                - They can both be used to make AWS service requests.
+                - **Client** is the original abstraction and it works as a low-level interface
+                - Often we wind up working with Python dictionaries that include lists
+                - **Resource** is a newer and higher-level abstraction
 
-Resources:
+
+### Examples of `.client` versus `.resource` code
+
+```
+# boto3 .client S3 listing (subject to limit 1000; cf paginator)
+import boto3
+client = boto3.client('s3')
+response = client.list_objects_v2(Bucket='mybucket')
+for content in response['Contents']:
+    obj_dict = client.get_object(Bucket='mybucket', Key=content['Key'])
+    print(content['Key'], obj_dict['LastModified'])
+```
+
+Example `.resource` code
+
+```
+# boto3 .resource S3 listing (no 1000-restriction; pagination automatic)
+import boto3
+s3 = boto3.resource('s3')
+bucket = s3.Bucket('mybucket')
+for obj in bucket.objects.all():
+    print(obj.key, obj.last_modified)
+```
+
+
+My reference repositories on GitHUb:
+
+
 - [costnotify repo](https://github.com/robfatland/costnotify): **Alarm (timer)** > **Lambda** > **SNS Email**
 - [digital twin repo](https://github.com/robfatland/digitaltwin): Use of the `event` object passed to the event handler 
 
@@ -46,17 +85,18 @@ Resources:
 
 - Payer account **P**
     - Has associated sub-accounts **S1**, **S2**, ... , **SN**
-    - Has corresponding Notify lists (people who should know something is up) **L1** etc
+    - Has corresponding Notify lists (people who should be alerted of a halt condition) **L1** etc
     - Has corresponding Fail criteria (maximum number of VMs anticipated, etcetera)
         - Example: "Number of EC2 instances will never exceed 3"
 - For **P** and sub-accounts **S#**:
-    - Every (say) five minutes a script runs to determine the system state: **Ok / Fail**
+    - Every (say) five minutes a script runs to determine the system state: **Ok / Halt**
         - Most of the time: Nothing has happened in the past five minutes, state = **Ok**
-        - Perhaps: Events result in state = **Fail**
+        - Perhaps: Events result in state = **Halt**
             - Enact response
-                - Halt all EC2 instances across all available regions (now working; see below)
-                - Disable all IAM User access to this account
-                - Disable all IAM Roles (?)
+                - Halt all EC2 instances across all available regions
+                - Delete all IAM User accounts: Must be regenerated
+                - Delete all IAM Access Keys: Must be regenerated
+                - Disable all IAM Roles?
                 - Send a notification email to the Notify list
          
 
@@ -182,9 +222,10 @@ ec2limit        4
 envaction       proceed
 accountnumber   123456789012
 snsregion       us-west-2
+recoveryp       dsp#*%712POCxxs!)*632MKW
 ```
 
-Here is the Lambda Python code:
+Lambda Python code (under development; do not use):
 
 ```
 import json, boto3, os
@@ -194,9 +235,10 @@ ec2limit      = int(os.environ['ec2limit'])
 envaction     = os.environ['envaction']
 accountnumber = os.environ['accountnumber']
 snsregion     = os.environ['snsregion']
+recoveryp     = os.environ['recoveryp']
 
 def stop_running_instances(region_name):
-    ec2 = boto3.resource('ec2', region_name=region_name)        # a collection of instances in this region
+    ec2 = boto3.resource('ec2', region_name=region_name)        # using .resource(): The collection of instances: this region
     instances = ec2.instances.filter(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
     idlist = [instance.id for instance in instances]
     print('in region ' + region_name + ' we found ' + str(len(idlist)) + ' EC2 instances')
@@ -205,47 +247,66 @@ def stop_running_instances(region_name):
         ec2.instances.filter(InstanceIds=[id]).stop()
     return len(idlist)
 
-def FreezeIAM():
-    client = boto3.client('iam')
-    iam = boto3.resource('iam')
-    access_key = iam.AccessKey('user_name','id')
-    print("Client:")
-    print(client)
-    print("IAM:")
-    print(iam)
-    print("Access Key:")
-    print(access_key)
+def IAMLockout():
+    client = boto3.client('iam')            # Can print this; .client() is the original SDK interface; .resource is higher-level
+    Ulist = client.list_users()['Users']
+    nUsersBounced      = 0
+    nAccessKeysDeleted = 0
+    
+    for user in Ulist:
+        uname = user['UserName']
+        if not uname == 'kjanet' and not uname == 'nykamp':          # for testing: Don't alter these two accounts
+
+            akeys = client.list_access_keys(UserName=uname)          # str(len(akeys['AccessKeyMetadata']))
+            for key in akeys['AccessKeyMetadata']:                   # key is a dictionary taken from a list of dictionaries
+                key_uname = key['UserName']
+                key_id    = key['AccessKeyId']
+                client.delete_access_key(AccessKeyId=key_id, UserName=key_uname)
+                print(key_id, key_uname)
+                nAccessKeysDeleted += 1
+                
+            rp = recoveryp + uname
+            # client.delete_login_profile(UserName=uname)         # this code is failing; check existence first
+                                                                  # [ERROR] NoSuchEntityException
+                                                                  # Note distinction .delete_login_profile() vs .delete_user() ...?...
+            print(uname + ' login profile not deleted pending fix')
+            
+            # A note on restoring access: Do not do this. An inimical account would be restored as well; unless
+            #   there is some sort of white list; but then that would be documented here so it would be vulnerable.
+            #   client.create_login_profile(UserName=name, Password=rp, PasswordResetRequired=True)
+            nUsersBounced += 1
+    
+    print('Bounced ' + str(nUsersBounced) + ' users and deleted ' + str(nAccessKeysDeleted) + ' access keys')
     return
     
 def SendSNSMsg(msg):
     email_subject = 'Runaway Train notification email'
-    email_body    = 'You subscribed.\n' + msg
+    email_body    = 'You subscribed.\n' + '\n' + msg
     sns           = boto3.client('sns')
     arnstring     = 'arn:aws:sns:' + snsregion + ':' + accountnumber + ':' + 'runawaytrain'
     response      = sns.publish(TopicArn=arnstring, Message=email_body, Subject=email_subject)
     return
     
 def lambda_handler(event, conext):
-    '''This function runs on the Lambda trigger'''
+    '''This is the function that runs when this Lambda is triggered'''
     
-    # Process a possible JSON event override: 'action' == 'pass'
+    # Two ways to get this Lambda to stop execution
+    #   - pass an event argument 'action' with value 'pass'
+    #   - set an environment variable 'envaction' with value 'pass'
     if 'action' in event.keys():
         print(event)
         if event['action'] == 'pass':
-            print('ec2halt never minded by action == pass')
+            print('ec2halt void because event action == pass')
             return { 'statusCode': 200, 'body': 'action == pass voids lambda ec2halt execution' }
-        elif event['action'] == 'proceed': print("event action signals proceed normally")
-        else: print("unrecognized event action value")
         
     # Process a possible environment variable override: 'envaction' == 'pass'
     if envaction == 'pass':
-        print('ec2halt never minded by envaction == pass override')
+        print('ec2halt void because envaction == pass')
         return { 'statusCode': 200, 'body': 'envaction == pass voids lambda ec2halt execution' }
-        
-    # proceed normally    
     
-    print("counting EC2 instances; must excede " + str(ec2limit) + " to trigger halt")
+    print("counting EC2 instances; must excede " + str(ec2limit) + " to trigger halt state")
     nEC2 = []       # a list of how many EC2 instances were stopped, by region
+    
     # WARNING This region list is specific to an AWS account. Caveat emptor: Modify as appropriate.
     regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',                                                     \
                'ap-south-1', 'ap-northeast-2', 'ap-northeast-3', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', \
@@ -270,10 +331,12 @@ def lambda_handler(event, conext):
 
     else: ackbody = "ec2halt found instance count <= limit"
 
-    FreezeIAM()
-    SendSNSMsg("Here is the test message")
-            
-    return { 'statusCode': 200, 'body': ackbody }
+    # should report on other actions as well:
+    SendSNSMsg("ec2halt test: shut down " + str(sum(nEC2)) + " EC2 instances")
+    
+    IAMLockout()   # goes inside halt code
+    
+    return {'statusCode': 200, 'body': ackbody }
 ```
 
 
