@@ -5,23 +5,23 @@
 
 
 Purpose: Deploy some AWS machinery -- including a Lambda function -- to regularly check
-AWS account integrity and responds to a compromised (bad guy in the barn) state. Bad guys
+AWS account integrity and respond to a compromised (bad guy intruder) state. Bad guys
 have been known to spin up compute resources that burn thousands of dollars per hour, 
-a deplorable state we refer to as the *runaway train*. 
+a deplorable turn of events that we refer to as a *runaway train*. 
 
 
 
 There are two conditions that can trigger the shutdown: The number of running EC2 instances
-exceeds a given threshold; or recent spend in the account exceeds a second threshold.
-Under either condition we proceed to stop all EC2 instances, and discontinue IAM User 
-access whether via console, AWS Role or API.
+in a Member account exceeds a given threshold; or recent spend in the Member Account exceeds 
+a second threshold. Under either condition we proceed to stop all EC2 instances and discontinue 
+User access via console, AWS Role and/or API.
 
 
-Specifically we are building for a single Payer account plus some number of 
-Sub-Accounts. 
+The runaway train build applies to a single Payer (Management/Security) Account plus some
+Sub-accounts aka Member Accounts. 
 
 
-## Notes on what next
+## Notes from 03-OCT-2023
 
 - Terminology: The Payer Account is also referred to as the Management/Security (M/S) Account
 - Terminology: The Sub-account is also referred to as a Member Account
