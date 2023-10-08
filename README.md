@@ -25,8 +25,21 @@ Sub-Accounts.
 
 - Terminology: The Payer Account is also referred to as the Management/Security (M/S) Account
 - Terminology: The Sub-account is also referred to as a Member Account
+- Terminology: CloudFormation stack is a text file that is 'run' to set up infrastructure in an account
+    - We flag relevant infrastructure in these notes with a bolded **step**
+    - These are things that need to happen around managing the account; code-able in a CF stack
+    - *"Create a CloudFormation template to change, track, and redeploy without manual intervention."*
+        - In addition to Billing Alerts the CF template can put HIPAA constraints in place
+- Account Access
+    - AWS IAM Identity Center has three options:
+        - Identity Center Directory: Self-contained, lots of labor involved.
+        - Active Directory: 'without using SAML federation'...not an option here
+        - External Identity Provider: Federate with SAML or other external IDPs including Azure AD.
+            - As UW uses Azure AD this is the way to go; passwords are per NetID.
+            - New accounts **step**: Create IAM Roles for Users to assume on login
+            - Requires coordination with UW IT (ticket submitted)
 - Our AWS colleagues to report back on remarks from a Mgmt & Governance team specialist
-    - Specifically: **One Lambda, many CloudTrail alerts** concept
+    - Specifically: **One Lambda, many CloudTrail Billing Alerts** concept
 - Error on creating trigger: Failed to fetch: Implies Lambda and Alert must both run in N.Va
     - Rebuild the Lambda in N.Va
 - Important links to have on hand
@@ -34,13 +47,14 @@ Sub-Accounts.
         - [UW ITConnect: Federated logon](https://itconnect.uw.edu/tools-services-support/access-authentication/sso/integrate-vendor-products/)
         - [UW ITConnect parent of the above](https://itconnect.uw.edu/tools-services-support/access-authentication/sso/)
         - [AWS view of SSO](https:/docs.aws.amazon.com/singlesignon)
-        - AWS IAM Identity Center has three options:
-            - Identity Center Directory: Self-contained, lots of labor involved.
-            - Active Directory: 'without using SAML federation'...not an option here
-            - External Identity Provider: Federate with SAML or other external IDPs including Azure AD.
-                - As UW uses Azure AD this is the way to go; passwords are per NetID.
-                - New accounts **step**: Create IAM Roles for Users to assume on login
-                - Requires coordination with UW IT (ticket submitted)
+    - boto3
+	- [boto3 detaching a Role Policy](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/detach_role_policy.html)
+	- [boto3 deleting a Role Policy](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/delete_role_policy.html)
+	- [boto3 IAM top level page](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam.html)
+    - AWS Organizations
+        - [AWS Organizations cross-account Role documentation](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_access.html#orgs_manage_accounts_access-cross-account-role)
+        - [AWS Organizations Account access management](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_access.html)
+
     - [HIPAA](https://aws.amazon.com/solutions/implementations/compliance-hipaa/)
         - [White paper](https://docs.aws.amazon.com/pdfs/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/architecting-hipaa-security-and-compliance-on-aws.pdf)
         - [HIPAA-eligible services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
@@ -57,7 +71,7 @@ Sub-Accounts.
             - Consequently the Lambda must delete Roles that federated users assume.
             - **Do not** wholesale delete all IAM Roles in the account as many are used by AWS services
             - Delete only Roles that Users are assuming
-            - 'f any Federated User can assume a Role: You must delete that Role' (to stop the train)
+            - 'If any Federated User can assume a Role: You must delete that Role to stop the train'
             - [Boto3 reference on listing Roles / Tags](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_role_tags.html)
         - A Lambda can assume a Role with permission to take action in sub-accounts
             - This is the **One Lambda** concept (in the Management/Security (M/S) account)
@@ -67,53 +81,22 @@ Sub-Accounts.
             - **step** In Organizations: There is a default built-in Administrator Role for Member Accounts
             - Look at Control Tower: The Primary Payer Account has this Admin Role built in vis Member Accounts 
             - Create Member Accounts using Organizations
-                - This automatically sets up the key *OrganizationAccountAccessRole* in the Member Account 
-
-Billing Alert: For the consolidated bill in the Payer account. Per account? Unknown. 
-
-	1. You wouldn’t need to implement in every account, just have the rights to make calls to the member accounts from the management account. It would still be a good idea to create a Cloudformation template anyway so you can change, track, and redeploy without any manual intervention.
-
-
-CloudFormation stack for the billing alert; plus a HIPAA version; with those various controls in place. 
+                - This automatically sets up the key *OrganizationAccountAccessRole* in the Member Account
+        - Billing Alert: Generated under CloudWatch in the N.Virginia region
+            - This runs over the consolidated bill in the Payer (M/S) Account
+            - From the Payer account: It is assumed at this point there is no Member Account breakout or filter
+                - This in turn means that Billing Alerts must be established on each Member Account (**step**)
 
 
-	1. I’ll get with Jeff and see if there is a way we can at least formalize a method or SOP for overruns. That way if there is an overrun, people don’t have to fumble around trying to find the right AWS contact, or go directly to AWS CS without Jeff and I knowing about it (which would slow down any efforts we could employ to help).
-
-
-CS is Customer Support
-
-	
-	
-	https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/delete_role_policy.html
-	
-	https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/detach_role_policy.html
-	
-	
-	https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam.html
-	
-	
-	
-	https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_access.html#orgs_manage_accounts_access-cross-account-role
-	
-	
-	
-	https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_access.html
-	
-	
-	
-	https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_access.html#orgs_manage_accounts_access-cross-account-role
-![image](https://github.com/robfatland/runawaytrain/assets/6199513/96d4f1ed-9d3c-4afe-bf16-a41118872697)
-    
+> Key Concept: The Runaway Train solution consists of two entities: The Lambda Function on the M/S account and independently
+> one Billing Alert in each Member Account. The Lambda can stop the train of its own volition based on an EC2 count
+> exceeding a threshold. The Billing Alert can trigger the Lambda to stop the train by means of an SNS Topic.
 
 
 - A single Lambda runs in the Payer account with Role-based access to sub-accounts
     - This assumes Roles in sequence to check on EC2 count
     - In contrast each sub-account has a CloudWatch spend alert installed
         - When this reads high spend it notifies an SNS topic
-
-- Sub-account installation: Via automated 'infrastructure as code'.
-
-
 - There are some details to be aware of
     - Notification of a trigger is sent via email using **SNS**
         - The SNS *topic* is defined and recipients *subscribe* to that topic
@@ -128,6 +111,10 @@ CS is Customer Support
     - Regions
         - Be aware of regional locations when building infrastructure
             - For example see the `snsregion` environment variable described below 
+
+
+### Lambda with `boto3`
+
 
 - on the boto3 Python AWS interface
     - We use a Lambda function running Python code
