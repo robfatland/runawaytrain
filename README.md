@@ -4,19 +4,31 @@
 # runawaytrain
 
 
-Purpose: Deploy AWS infrastructure -- including a Lambda function -- that regularly checks
-AWS account integrity and responds to a compromised (bad guy) state. There are two trigger 
-conditions involved: Counting the number of running EC2 instances across all regions (trigger:
-if the count exceeds a threshold); and looking at recent spend on AWS over the past two hours
-(trigger: spend exceeds a threshold). Once we hit a trigger: Stop all EC2 instances and 
-locks out all IAM Users. Only the root user can come back in and start things back up again.
+Purpose: Deploy some AWS machinery -- including a Lambda function -- to regularly check
+AWS account integrity and responds to a compromised (bad guy in the barn) state. Bad guys
+have been known to spin up compute resources that burn thousands of dollars per hour, 
+a deplorable state we refer to as the *runaway train*. 
 
 
-## Top view notes
+
+There are two conditions that can trigger the shutdown: The number of running EC2 instances
+exceeds a given threshold; or recent spend in the account exceeds a second threshold.
+Under either condition we proceed to stop all EC2 instances, and discontinue IAM User 
+access whether via console, AWS Role or API.
 
 
-- Once the machinery is in place as described below: Ideally we would like to deploy new copies
-into sub-accounts in an automated 'infrastructure as code' manner.
+Specifically we are building for a single Payer account plus some number of 
+Sub-Accounts. 
+
+
+## Notes
+
+- A single Lambda runs in the Payer account with Role-based access to sub-accounts
+    - This assumes Roles in sequence to check on EC2 count
+    - In contrast each sub-account has a CloudWatch spend alert installed
+        - When this reads high spend it notifies an SNS topic
+
+- Sub-account installation: Via automated 'infrastructure as code'.
 
 
 - There are some details to be aware of
