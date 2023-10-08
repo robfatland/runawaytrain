@@ -48,9 +48,9 @@ Sub-accounts aka Member Accounts.
         - [UW ITConnect parent of the above](https://itconnect.uw.edu/tools-services-support/access-authentication/sso/)
         - [AWS view of SSO](https:/docs.aws.amazon.com/singlesignon)
     - boto3
-	- [boto3 detaching a Role Policy](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/detach_role_policy.html)
-	- [boto3 deleting a Role Policy](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/delete_role_policy.html)
-	- [boto3 IAM top level page](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam.html)
+	- [detaching a Role Policy](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/detach_role_policy.html)
+	- [deleting a Role Policy](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/delete_role_policy.html)
+	- [IAM top level page](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam.html)
     - AWS Organizations
         - [AWS Organizations cross-account Role documentation](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_access.html#orgs_manage_accounts_access-cross-account-role)
         - [AWS Organizations Account access management](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_access.html)
