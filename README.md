@@ -21,7 +21,20 @@ Specifically we are building for a single Payer account plus some number of
 Sub-Accounts. 
 
 
-## Notes
+## Notes on what next
+
+- Our AWS colleagues to report back on remarks from a Mgmt & Governance team specialist
+    - Specifically: **One Lambda, many CloudTrail alerts** concept
+- Error on creating trigger: Failed to fetch: Implies Lambda and Alert must both run in N.Va
+    - Rebuild the Lambda in N.Va
+- Important links to have on hand
+    - [UW on federated logon](https://itconnect.uw.edu/tools-services-support/access-authentication/sso/integrate-vendor-products/)
+        - [SSO parent page at ITConnect](https://itconnect.uw.edu/tools-services-support/access-authentication/sso/)
+        - [AWS view of SSO](https:/docs.aws.amazon.com/singlesignon)
+    - [HIPAA](https://aws.amazon.com/solutions/implementations/compliance-hipaa/)
+        - [White paper](https://docs.aws.amazon.com/pdfs/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/architecting-hipaa-security-and-compliance-on-aws.pdf)
+        - [HIPAA-eligible services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+    - 
 
 - A single Lambda runs in the Payer account with Role-based access to sub-accounts
     - This assumes Roles in sequence to check on EC2 count
