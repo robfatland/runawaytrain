@@ -113,24 +113,23 @@ Sub-accounts aka Member Accounts.
             - For example see the `snsregion` environment variable described below 
 
 
-### Lambda with `boto3`
+### A Python Lambda using the `boto3` AWS interface library
+
+- This code imports the `boto3` library (SDK) to execute tasks on the AWS cloud
+- One of the key lines of this code is `client = boto3.client('iam')`
+    - This creates a `client` object used to deactivate Users and Access Keys
+    - We could also write this code in terms of a `resource` rather than a `client`
+        - [On the distinction (from StackOverflow)](https://stackoverflow.com/questions/42809096/difference-in-boto3-between-resource-client-and-session):
+
+#### **Client** and **Resource** are distinct abstractions.
+
+- They can both be used to make AWS service requests.
+- **Client** is the original abstraction and it works as a low-level interface
+    - Often in this case we work with Python dictionaries that include lists
+- **Resource** is a newer and higher-level abstraction; so more `method()` focus
 
 
-- on the boto3 Python AWS interface
-    - We use a Lambda function running Python code
-    - This code imports the `boto3` library (SDK) to execute tasks on the AWS cloud
-    - One of the key lines of this code is `client = boto3.client('iam')`
-        - This creates a `client` object used to deactivate Users and Access Keys
-        - We could also write this code in terms of a `resource` rather than a `client`
-            - What is the distinction between a boto3 `client` versus `resource`?
-                - From [StackOverflow](https://stackoverflow.com/questions/42809096/difference-in-boto3-between-resource-client-and-session): **Client** and **Resource** are distinct abstractions.
-                - They can both be used to make AWS service requests.
-                - **Client** is the original abstraction and it works as a low-level interface
-                - Often we wind up working with Python dictionaries that include lists
-                - **Resource** is a newer and higher-level abstraction
-
-
-### Examples of `.client` versus `.resource` code
+#### Examples of `.client` versus `.resource` code
 
 ```
 # boto3 .client S3 listing (subject to limit 1000; cf paginator)
@@ -154,7 +153,7 @@ for obj in bucket.objects.all():
 ```
 
 
-My reference repositories on GitHUb:
+Two reference repositories on GitHUb (Lambda code in practice):
 
 
 - [costnotify repo](https://github.com/robfatland/costnotify): **Alarm (timer)** > **Lambda** > **SNS Email**
@@ -162,57 +161,50 @@ My reference repositories on GitHUb:
 
 
 
-## Premise
+## Runaway train logic overview
 
 
 - Payer account **P**
-    - Has associated sub-accounts **S1**, **S2**, ... , **SN**
-    - Has corresponding Notify lists (people who should be alerted of a halt condition) **L1** etc
-    - Has corresponding Fail criteria (maximum number of VMs anticipated, etcetera)
-        - Example: "Number of EC2 instances will never exceed 3"
-- For **P** and sub-accounts **S#**:
-    - Every (say) five minutes a script runs to determine the system state: **Ok / Halt**
-        - Most of the time: Nothing has happened in the past five minutes, state = **Ok**
-        - Perhaps: Events result in state = **Halt**
-            - Enact response
-                - Halt all EC2 instances across all available regions
-                - Delete all IAM User accounts: Must be regenerated
-                - Delete all IAM Access Keys: Must be regenerated
-                - Disable all IAM Roles?
-                - Send a notification email to the Notify list
+    - Associated sub-accounts **S1**, **S2**, ... , **SN**
+    - Corresponding SNS Topics **SNS1**, ...
+        - Corresponding subscribers; a 'Notification List' **L1**, ...
+    - Threshold for EC2: **TE1**, ...
+    - Threshold spend: **TS1**, ...
+        - Examples: "EC2 instance count <= 3", "Spend per six hours < $800"
+- On **P**: Every five minutes a CloudWatch alarm triggers Lambda
+    - For all **S**: Count EC2 in all regions
+        - If sum > **TE**: Halt the account and notify **L**
+            - Halt: Stop all EC2 instances, disable User Roles, delete Access Keys
+- On each **S**: A Billing Alert triggers an SNS Topic configured to trigger Lambda
+    - Ideally this is the same Lambda but with specific event arguments
+        - Response as above
          
 
-## Notes
+### Two types of trigger rationale
 
-There are two aspects to the trigger concept: Spend per unit time and a simple total number of EC2 instances.
-One could argue that one or the other is sufficient; but my premise is that having multiple checks
-on account use is a good idea.
+Spend per unit time and total number of EC2 instances: Two independent ways to catch 
+the problem and mitigate the damage.
 
 
 ### Resources
 
 
-Dashboards
+- Dashboards
+    - [Cost Intelligence dashboard (intro)](https://aws.amazon.com/blogs/aws-cloud-financial-management/a-detailed-overview-of-the-cost-intelligence-dashboard/)
+    - [Cloud Intelligence dashboard (lab)](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)
 
 
-* [...the Cost Intelligence dashboard (intro)](https://aws.amazon.com/blogs/aws-cloud-financial-management/a-detailed-overview-of-the-cost-intelligence-dashboard/)
-* [...the Cloud Intelligence dashboard (lab)](https://wellarchitectedlabs.com/cost/200_labs/200_cloud_intelligence/)
+- Billing alarms
+    - [Key page](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html#turning_on_billing_metrics)
+    - [Another key page](https://aws.amazon.com/blogs/mt/setting-up-an-amazon-cloudwatch-billing-alarm-to-proactively-monitor-estimated-charges)
+- Lambda functions
+    - [General: Lambda with API Gateway trigger](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
+    - [Using a Lambda to stop EC2 instances](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/stop_instances)
 
 
-Billing alarms
 
+## Billing Alerts
 
-* [First key page](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html#turning_on_billing_metrics)
-* [Second key page](https://aws.amazon.com/blogs/mt/setting-up-an-amazon-cloudwatch-billing-alarm-to-proactively-monitor-estimated-charges)
-
-
-Lambda functions
-
-* General information: [Lambda with an API Gateway trigger](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html)
-* To the purpose: [Using a Lambda to stop EC2 instances](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/stop_instances)
-
-
-## Procedure: Billing alarms
 
 ### Establish Cost and Usage Report (CUR) logging into S3
 
@@ -227,10 +219,10 @@ This is on the spend side of the trigger concept. It is independent of the EC2 '
         * `organization-aws-cur/report/organization_aws_cur/20230901-20231001/20230906T032712Z/organization_aws_cur-00001.csv.gz
 
 
-### Set up billing alarms
+### Set up Billing Alerts
 
      
-## Procedure: EC2 instance profusion 
+## EC2 instance profusion > threshold 
 
 
 ### Start some EC2 instances
