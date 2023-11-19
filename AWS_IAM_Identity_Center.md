@@ -6,6 +6,9 @@
 
 - [AWS Resource](https://us-east-1.console.aws.amazon.com/singlesignon/home?region=us-east-1#!/)
 - [UW IT Resource](https://wiki.cac.washington.edu/display/infra/Sign+in+to+the+AWS+Console+with+UW+NetID)
+- [SSO Userguide on IDP management](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html)
+- [SSO Userguide on Organizations](https://docs.aws.amazon.com/singlesignon/latest/userguide/organization-instances-identity-center.html)
+- [SSO USerguide on User Access](https://docs.aws.amazon.com/singlesignon/latest/userguide/useraccess.html)
 
 
 ## Narrative: Condensed version
