@@ -4,11 +4,13 @@
 ## Links
 
 
-- [AWS Resource](https://us-east-1.console.aws.amazon.com/singlesignon/home?region=us-east-1#!/)
 - [UW IT Resource](https://wiki.cac.washington.edu/display/infra/Sign+in+to+the+AWS+Console+with+UW+NetID)
-- [SSO Userguide on IDP management](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html)
-- [SSO Userguide on Organizations](https://docs.aws.amazon.com/singlesignon/latest/userguide/organization-instances-identity-center.html)
-- [SSO USerguide on User Access](https://docs.aws.amazon.com/singlesignon/latest/userguide/useraccess.html)
+- [AWS Resource](https://us-east-1.console.aws.amazon.com/singlesignon/home?region=us-east-1#!/)
+- SSO Userguide on...
+    - [...connecting to Microsoft AD as IDP](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-ad.html)
+    - [...IDP management in general](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html)
+    - [...Organizations](https://docs.aws.amazon.com/singlesignon/latest/userguide/organization-instances-identity-center.html)
+    - [...User Access](https://docs.aws.amazon.com/singlesignon/latest/userguide/useraccess.html)
 
 
 ## Narrative: Condensed version
@@ -41,15 +43,20 @@
             * Contrast an AWS IAM root identity mapping 1:1 to AWS accounts
          
 
+## AWS SSO Userguide notes
+
+- 
 
 
 ## UW Wiki: Configuration procedural 
+
 
 Pasting and editing from the wiki: The information is for a single account, not an 
 AWS Organization. 
 
 
 The AWS account owner configures federated sign-in:
+
 
 - Send UW-IT the 12-digit-number AWS Account ID: To `iam-support@uw.edu`
     - UW-IT creates a UW group stem for you to manage AWS roles
