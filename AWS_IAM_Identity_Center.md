@@ -16,13 +16,42 @@
 ## Basics
 
 * Key questions
-    * How do we enable AWS **IAM Identity Center**?
+    * How do we enable AWS **IAM Identity Center**? Answer: It is already enabled in Region = us-west-2 (Oregon)
     * 'Can the UW IdP for NetID SSO to the AWS console be repurposed for AWS Organizations?'
     * 'What are the implications for using API-based access (`cli`, `boto3` etcetera)'
 * Term: SSO = 'single sign on': I log on to an AWS Console Account using a NetID
 * Term: SAML = Security Assertion Markup Language
 * Term: IDP = Identity Provider, in this context UW IT using Azure AD
 * In what follows: A User performs actions using a Client browser
+
+
+## IAM Identity Center configuration
+
+
+
+### Naming the IAM Identity Center instance
+
+
+The instance name displays when application owners configure applications with IAM Identity Center, and to users in the AWS access portal. 
+The name can be changed at a later time: `escience-aws`. The IIC has a name `ssoins-01...`. It has an organization ID `o-abcd...`. It has
+an ARN `arn:aws:sso:::instance/ssoins-01...`. 
+
+
+### Identity source
+
+- Choose to make this an external provider
+    - We manage users and groups in an external identity provider (IdP)
+    - Users sign in to your IdP sign-in page, are redirected to the AWS access portal
+    - After they sign in to the AWS access portal, they can access their assigned AWS accounts and cloud applications
+
+### Authentication
+
+
+### Management 
+
+
+### Tags
+
 
 
 ## SSO transaction in modest detail
