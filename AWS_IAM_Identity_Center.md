@@ -13,17 +13,19 @@
     - [...User Access](https://docs.aws.amazon.com/singlesignon/latest/userguide/useraccess.html)
 
 
-## Narrative: Condensed version
+## Basics
 
-* Can the UW IdP for NetID SSO to the AWS console be repurposed for AWS Organizations?
-* What are the implications for using API-based access (`cli`, `boto3` etcetera) 
-* SSO is 'single sign on': I log on to an AWS Console Account using a NetID
-* SAML is Security Assertion Markup Language
-* IdP is Identity Provider, in this context UW IT
-* A User performs actions using a Client browser
+* Key questions
+    * How do we enable AWS **IAM Identity Center**?
+    * 'Can the UW IdP for NetID SSO to the AWS console be repurposed for AWS Organizations?'
+    * 'What are the implications for using API-based access (`cli`, `boto3` etcetera)'
+* Term: SSO = 'single sign on': I log on to an AWS Console Account using a NetID
+* Term: SAML = Security Assertion Markup Language
+* Term: IDP = Identity Provider, in this context UW IT using Azure AD
+* In what follows: A User performs actions using a Client browser
 
 
-## User Experience: Longer narrative, more detail
+## SSO transaction in modest detail
 
 
 * A User connecting to the AWS console is directed to the IdP
@@ -45,14 +47,27 @@
 
 ## AWS SSO Userguide notes
 
-- 
+
+> We work from a 'self-managed' AD at UW; so as we do not need it: Disregard the **AWS Managed Microsoft AD**.
+
+
+- AWS **IAM Identity Center**: Connect a self-managed directory in Active Directory (AD) using the **AWS Directory Service**
+    - This AD directory defines the pool of identities administrators can pull from
+        - ...use the **IAM Identity Center** console to assign single sign-on access
+    - After connecting your corporate directory to **IAM Identity Center**
+        - Grant AD users or groups access to AWS accounts and/or applications
+- To use **AWS Directory Service** to connect AWS resources with the *existing* self-managed AD
+    - In configuration: Set up a trust relationship
+- **IAM Identity Center** uses the connection provided by **AWS Directory Service**
+    - Performs pass-through authentication to the source AD instance
+- Prerequisite: Ensure the AD Connector resides within your AWS Organizations management account
 
 
 ## UW Wiki: Configuration procedural 
 
 
-Pasting and editing from the wiki: The information is for a single account, not an 
-AWS Organization. 
+Paste/edit from the wiki: This is a six-step procedure for a single AWS account 
+presumed to be under the DLT Payer Account. It does not cover AWS Organizations. 
 
 
 The AWS account owner configures federated sign-in:
