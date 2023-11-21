@@ -16,7 +16,7 @@
 ## Basics
 
 * Key questions
-    * How do we enable AWS **IAM Identity Center**? Answer: It is already enabled in Region = us-west-2 (Oregon)
+    * How do we configure AWS **IAM Identity Center**? This is enabled in uw-west-2; see questions below.
     * 'Can the UW IdP for NetID SSO to the AWS console be repurposed for AWS Organizations?'
     * 'What are the implications for using API-based access (`cli`, `boto3` etcetera)'
 * Term: SSO = 'single sign on': I log on to an AWS Console Account using a NetID
@@ -40,14 +40,24 @@ an ARN `arn:aws:sso:::instance/ssoins-01...`.
 ### Identity source
 
 - Choose to make this an external provider
-    - We manage users and groups in an external identity provider (IdP)
-    - Users sign in to your IdP sign-in page, are redirected to the AWS access portal
-    - After they sign in to the AWS access portal, they can access their assigned AWS accounts and cloud applications
+    - We manage users and groups in the external identity provider (IdP)
+    - Users sign in to the IdP sign-in page, are redirected to the AWS access portal
+    - After they sign in: They access their assigned AWS accounts and cloud applications
+- Changing to External Provider brings up a dialog
+    - One of the following options
+        - Upload a SAML file
+        - Provide
+            - IdP sign-in URL
+            - IdP issuer URL
+            - IdP certificate
+
 
 ### Authentication
 
 
+
 ### Management 
+
 
 
 ### Tags
