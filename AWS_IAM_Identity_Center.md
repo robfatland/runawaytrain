@@ -17,12 +17,22 @@
 
 * Key questions
     * How do we configure AWS **IAM Identity Center**? This is enabled in uw-west-2; see questions below.
-    * 'Can the UW IdP for NetID SSO to the AWS console be repurposed for AWS Organizations?'
-    * 'What are the implications for using API-based access (`cli`, `boto3` etcetera)'
+    * Can the UW IdP NetID SSO to the AWS console be repurposed to an AWS **Organization**?
+    * What are the implications for using the AWS API (`cli`, `boto3` etcetera)?
 * Term: SSO = 'single sign on': I log on to an AWS Console Account using a NetID
 * Term: SAML = Security Assertion Markup Language
-* Term: IDP = Identity Provider, in this context UW IT using Azure AD
+* Term: IDP or IdP = Identity Provider, in this context UW IT using Azure AD
 * In what follows: A User performs actions using a Client browser
+
+
+## Progress
+
+- UW IT has created a new **Stem Group** at `https://groups.uw.edu/group/u_weblogin_aws_111122223333`
+    - Note the sub-group creator is just one NetID at this time; could expand this list 
+- The URL for metadata is [here](https://idp.u.washington.edu/metadata/idp-metadata.xml)
+- For each AWS { Account + Role } create a new subgroup by going to [this link](https://groups.uw.edu/?view=new)
+- After [login](https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices)...
+    - ...the User should be presented with a choice of available Roles (+ Accounts) to take on for the session
 
 
 ## IAM Identity Center configuration
@@ -33,8 +43,8 @@
 
 
 The instance name displays when application owners configure applications with IAM Identity Center, and to users in the AWS access portal. 
-The name can be changed at a later time: `escience-aws`. The IIC has a name `ssoins-01...`. It has an organization ID `o-abcd...`. It has
-an ARN `arn:aws:sso:::instance/ssoins-01...`. 
+The name can be changed at a later time: `escience-aws`. The IIC has a name `ssoins-0123...`. It has an organization ID `o-abcd...`. It has
+an ARN `arn:aws:sso:::instance/ssoins-0123...`. 
 
 
 ### Identity source
@@ -87,7 +97,7 @@ an ARN `arn:aws:sso:::instance/ssoins-01...`.
 ## AWS SSO Userguide notes
 
 
-> We work from a 'self-managed' AD at UW; so as we do not need it: Disregard the **AWS Managed Microsoft AD**.
+> We work from a 'self-managed' AD at UW. Therefore we will not need or use the **AWS Managed Microsoft AD**.
 
 
 - AWS **IAM Identity Center**: Connect a self-managed directory in Active Directory (AD) using the **AWS Directory Service**
