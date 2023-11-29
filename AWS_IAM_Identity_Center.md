@@ -28,7 +28,8 @@
 ## Progress
 
 - UW IT has created a new **Stem Group** at `https://groups.uw.edu/group/u_weblogin_aws_111122223333`
-    - Note the sub-group creator is just one NetID at this time; could expand this list 
+    - Note the sub-group creator is just one NetID at this time; could expand this list
+    - Created: Sub-group with 3 members: `stem group` + `_escience`
 - The URL for metadata is [here](https://idp.u.washington.edu/metadata/idp-metadata.xml)
 - For each AWS { Account + Role } create a new subgroup by going to [this link](https://groups.uw.edu/?view=new)
 - After [login](https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices)...
