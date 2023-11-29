@@ -61,6 +61,13 @@ an ARN `arn:aws:sso:::instance/ssoins-0123...`.
             - IdP issuer URL
             - IdP certificate
 
+UW IT suggests:
+
+
+- IdP Sign-in URL: `https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices`
+- IdP Issuer URL: `urn:mace:incommon:washington.edu`
+- IdP Certificate file: `idp-metadata.xml`
+
 
 ### Authentication
 
