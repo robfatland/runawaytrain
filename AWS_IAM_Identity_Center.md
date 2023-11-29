@@ -11,6 +11,9 @@
     - [...IDP management in general](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html)
     - [...Organizations](https://docs.aws.amazon.com/singlesignon/latest/userguide/organization-instances-identity-center.html)
     - [...User Access](https://docs.aws.amazon.com/singlesignon/latest/userguide/useraccess.html)
+- Account provisioning
+    - [Automatic](https://docs.aws.amazon.com/singlesignon/latest/userguide/provision-automatically.html)
+    - [Manual](https://docs.aws.amazon.com/singlesignon/latest/userguide/provision-manually.html)
 
 
 ## Basics
