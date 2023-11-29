@@ -19,7 +19,6 @@
 ## Basics
 
 * Key questions
-    * How do we configure AWS **IAM Identity Center**? This is enabled in uw-west-2; see questions below.
     * Can the UW IdP NetID SSO to the AWS console be repurposed to an AWS **Organization**?
     * What are the implications for using the AWS API (`cli`, `boto3` etcetera)?
 * Term: SSO = 'single sign on': I log on to an AWS Console Account using a NetID
@@ -30,14 +29,21 @@
 
 ## Progress
 
+
 - UW IT has created a new **Stem Group** at `https://groups.uw.edu/group/u_weblogin_aws_111122223333`
     - Note the sub-group creator is just one NetID at this time; could expand this list
     - Created: Sub-group with 3 members: `stem group` + `_escience`
+    - Created: SAML 2.0 Role `escience` on Management account with attached Policy
 - The URL for metadata is [here](https://idp.u.washington.edu/metadata/idp-metadata.xml)
-- For each AWS { Account + Role } create a new subgroup by going to [this link](https://groups.uw.edu/?view=new)
+    - This is all that is needed to redirect IAM Identity Center to UW
+- Create: For the above AWS { Account + Role } a [sub-group](https://groups.uw.edu/?view=new)
 - After [login](https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices)...
-    - ...the User should be presented with a choice of available Roles (+ Accounts) to take on for the session
-
+    - ...a User is presented with a choice of available Roles
+    - However the login is not yet working
+- Can we accomplish just-in-time provisioning rather than "advance" provisioning e.g. with `Skim`?
+    - JIT is how it was done in the past
+    - The trend here is towards ending IAM Users on AWS in favor of assumed Roles
+    - As a stop-gap: IAM Users can allocate resources, work etc; and then the SSO User can pick up where they left off
 
 ## IAM Identity Center configuration
 
@@ -59,29 +65,8 @@ an ARN `arn:aws:sso:::instance/ssoins-0123...`.
     - After they sign in: They access their assigned AWS accounts and cloud applications
 - Changing to External Provider brings up a dialog
     - One of the following options
-        - Upload a SAML file
-        - Provide
-            - IdP sign-in URL
-            - IdP issuer URL
-            - IdP certificate
-
-UW IT suggests:
-
-
-- IdP Sign-in URL: `https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices`
-- IdP Issuer URL: `urn:mace:incommon:washington.edu`
-- IdP Certificate file: `idp-metadata.xml`
-
-
-### Authentication
-
-
-
-### Management 
-
-
-
-### Tags
+        - Upload a SAML file: ***How we did it*** using `idp-metadata.xml`
+        - Provide 3 items: Not how we did it
 
 
 
@@ -146,7 +131,7 @@ The AWS account owner configures federated sign-in:
     - > IAM > Roles > Create New Role
         - `SAML 2.0 federation`
         - SAML provider: Select from above
-        - Attribute: `SAML:aud`: `https://signin.aws.amazon.com/saml`
+        - Attribute: **`SAML:aud`: `https://signin.aws.amazon.com/saml`**
     - `Next: Permissions`
         - Choose AWS Policies granted this Role
     - > `Review`
