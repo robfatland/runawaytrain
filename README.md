@@ -1,5 +1,11 @@
 <img src="https://github.com/robfatland/runawaytrain/blob/main/runawaytrain.png" width="500">
 
+# key links
+
+- About UW NetIDs
+    - [general information](https://itconnect.uw.edu/tools-services-support/access-authentication/uw-netids/about-uw-netids/)
+    - [request a departmental shared NetID](https://uwconnect.uw.edu/sp?id=sc_cat_item&sys_id=61fc4ab50fc3e7006cad419ce1050e78): In this context: Anchors a sub-account
+
 
 # runawaytrain
 
