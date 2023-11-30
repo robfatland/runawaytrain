@@ -17,7 +17,7 @@
     - [Manual](https://docs.aws.amazon.com/singlesignon/latest/userguide/provision-manually.html)
 
 
-## Basics
+## Basics 
 
 * [SSO Login](https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices))
 * Key questions
