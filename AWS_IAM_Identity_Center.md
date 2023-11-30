@@ -15,6 +15,8 @@
 - Account provisioning (i.e. assuming a Role via SSO)
     - [Automatic](https://docs.aws.amazon.com/singlesignon/latest/userguide/provision-automatically.html)
     - [Manual](https://docs.aws.amazon.com/singlesignon/latest/userguide/provision-manually.html)
+- Debugging
+    - [Instructions for saving Console LOG and HAR files](https://repost.aws/knowledge-center/support-case-browser-har-file)
 
 
 ## Basics 
