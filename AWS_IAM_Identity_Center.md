@@ -41,12 +41,12 @@
     - Created: Sub-group with 3 NetID members. Name is `stem group` + `_escience`
 - Created: SAML 2.0 Role `escience` on Management account with attached Policy
 - The URL for metadata is [here](https://idp.u.washington.edu/metadata/idp-metadata.xml)
-    - This is needed to redirect IAM Identity Center to UW as IdP
+    - This was used to successfully redirect IAM Identity Center to the UW IdP
 - At UW IT: Created a [sub-group](https://groups.uw.edu/?view=new) corresponding to the AWS { Account + Role }
 - After [login](https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices)...
     - ...the User is presented with choice of available Roles including the new one from above
     - ...however login to the new role above fails with 400 message
-- Can we accomplish just-in-time provisioning rather than "advance" provisioning e.g. with `Skim`?
+- Can we accomplish just-in-time provisioning rather than "advance" provisioning e.g. with `SCIM`?
     - JIT is how it was done in the past
     - The trend here is towards ending IAM Users on AWS in favor of assumed Roles
     - As a stop-gap: IAM Users can allocate resources, work etc; and then the SSO User can pick up where they left off
