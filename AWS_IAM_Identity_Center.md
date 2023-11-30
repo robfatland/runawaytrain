@@ -21,7 +21,7 @@
 
 ## Basics 
 
-* [SSO Login](https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices))
+* [SSO Login](https://idp.u.washington.edu/idp/profile/SAML2/Unsolicited/SSO?providerId=urn:amazon:webservices)
 * Key questions
     * Can the UW IdP NetID SSO to the AWS console be repurposed to an AWS **Organization**?
     * Once SSO to the Management account is working: How is this extended to sub-accounts?
