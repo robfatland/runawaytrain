@@ -1,6 +1,24 @@
 # AWS IAM Identity Center
 
 
+Before we get started, here is a refresh on some key terms: 
+
+
+- ***Define Organizations as consolidated billing*** and see that invoice for the breakout
+- ***IAM Identity Center*** is a a service for managing the people who use these accounts
+    - Centralized federation for multiple accounts; one setup in an organization coordinated with UW IT and not `n` times
+- ***Control Tower*** provides guard rails, centralized logging, and centralized observability
+    - Guard rail example: Member accounts: Limiting what regions are available: No compute in Singapore!
+    - Logging: CloudTrail: Master account turns this API logging on for Sub-accounts (and the Sub-account root can't turn it off again)
+    - Observability: Don't need to log in to sub-accounts to make a dashboard of logs; see also Audit account
+- ***Landing Zone*** is a pre-configured environment (meets some standard like HIPAA) for launching resources, particular to a sub-account
+    - The idea is to more easily allow researchers to do their work in a compliant manner
+- ***Account Factory*** is a pre-made configuration that deploys new AWS accounts (in contrast to post facto hand-crafting)
+- ***Service Catalog*** is a catalog of pre-built instructions that launch resources: Click go and it comes to life, no build expertise needed
+    - Under the hood this uses a Cloud Formation Template that someone wrote
+- ***Cloud Formation Template*** is a JSON or YAML file that is infrastructure as code: Deploys resource on AWS
+
+
 ## Links
 
 
